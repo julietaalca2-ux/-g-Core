@@ -18,12 +18,14 @@
 - v1.0: integración gradual con ÖG tras auditoría y plan de migración.
 
 
-## Fase 1 (v0.1.2) — estado
+## Fase 1 (v0.1.3) — estado
 - [x] Correcciones de seguridad del núcleo (código)
 - [x] Pruebas escritas (setup, auth, admin, SQLite, PostgreSQL)
 - [x] Corregido error TDZ en migrate() de PostgreSQL (v0.1.2)
 - [x] `npm run check` cubre todos los .js
-- [ ] npm install + package-lock.json
+- [x] npm install en Codespaces (informado por el usuario)
+- [ ] package-lock.json commiteado
+- [ ] Causa confirmada del fallo de test/sqlite.test.js (ejecutar `npm run doctor` y `npm run test:report`)
 - [ ] Resultados reales de pruebas SQLite
 - [ ] Resultados reales de pruebas PostgreSQL
 - [ ] npm audit

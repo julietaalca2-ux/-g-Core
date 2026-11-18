@@ -4,10 +4,14 @@
 ```
 npm install            # genera package-lock.json (commitearlo)
 npm run check
-npm run test:report    # SQLite siempre; PostgreSQL se omite sin TEST_DATABASE_URL
+npm run doctor         # diagnóstico del entorno (dependencias, SQLite nativo, configuración)
+npm run test:report    # cada archivo por separado, errores completos; PostgreSQL se omite sin TEST_DATABASE_URL
+node scripts/test.js sqlite   # solo los archivos cuyo nombre contenga "sqlite"
 npm run audit:deps
 ```
-Las pruebas no necesitan `.env`: `test-support/env.js` define secretos solo para test.
+Las pruebas no necesitan `.env` y no lo leen: `test-support/env.js` sobrescribe todas las variables de entorno relevantes (entorno hermético).
+
+Si un archivo falla sin detalle: `node test/sqlite.test.js` (ejecución directa) y `npm run doctor`.
 
 ## PostgreSQL real (base desechable)
 ```
@@ -25,17 +29,25 @@ setup (validación, clave incorrecta, creación, 409, índice único de propieta
 - `/health` y versión; `/me` sin token → 401; helmet y ausencia de `x-powered-by`.
 - CORS (con `node:http` para poder fijar `Origin`): origen permitido → `Access-Control-Allow-Origin`; origen bloqueado → 403 `CORS_BLOCKED` sin cabecera de permiso; coincidencia exacta (puerto, esquema, mayúsculas, subdominio engañoso, `null`); sin `Origin` → se atiende sin cabecera; preflight `OPTIONS` permitido → 204 con `GET,POST` y `Content-Type,Authorization`; preflight de `DELETE`/`PUT`/`PATCH` no se anuncia; preflight bloqueado → 403; un POST de origen bloqueado no llega al handler; método no permitido en petición real → 404 (CORS lo aplica el navegador, no el servidor).
 
+**Configuración:** `test/config.test.js` (valores por defecto, secretos cortos o de ejemplo, PostgreSQL sin URL, entorno hermético).
+
+**Estructura:** `test/structure.test.js` verifica que existan los archivos requeridos (incluido `scripts/check.js`) y que `package.json` apunte a ellos.
+
 **Seguridad y adaptador:** `test/security.test.js` (hashing, comparación en tiempo constante, tokens HS256) y `test/postgres-adapter.test.js` (pool simulado: migración, rollback, nombres de schema rechazados, limpieza acotada).
 
 ## Resultados reales
 | Comprobación | Estado |
 |---|---|
-| `npm run check` (19 archivos .js) | Ejecutado en el entorno de desarrollo: correcto |
-| `test/postgres-adapter.test.js` con `pg` simulado (5 pruebas) | Ejecutado: 5/5 correctas (lógica del adaptador, no PostgreSQL real) |
-| Pruebas CORS ampliadas (`test/app.test.js`) | **Escritas, NO ejecutadas** (faltan express/cors/helmet) |
-| `npm install` / `package-lock.json` | **Pendiente** (sin red al generar el ZIP) |
-| Pruebas SQLite (`test/sqlite.test.js` y resto) | **Pendiente, no verificado** |
-| Pruebas PostgreSQL real (`test/postgres.test.js`) | **Pendiente, no verificado** |
+| `npm run check` (23 archivos .js) | Ejecutado en el entorno de desarrollo: correcto |
+| `test/config.test.js` (4), con `zod` real y `dotenv` simulado | Ejecutado: 4/4 correctas, también con variables de entorno hostiles |
+| `test/structure.test.js` (2) | Ejecutado: 2/2 correctas |
+| `test/postgres-adapter.test.js` (5), con `pg` simulado | Ejecutado: 5/5 correctas (lógica del adaptador, no PostgreSQL real) |
+| SQL y adaptador SQLite sobre motor SQLite real (vía `node:sqlite`, capa temporal) | Ejecutado: correcto (migración idempotente, índice único de propietario, auditoría, límites) |
+| `npm install` en Codespaces | Correcto (informado por el usuario) |
+| `better-sqlite3` importa en Codespaces | Correcto (informado por el usuario) |
+| `test/sqlite.test.js` y suite compartida con `better-sqlite3`, express, etc. reales | **No ejecutadas por el asistente; fallo de v0.1.2 sin causa confirmada** |
+| `test/app.test.js` (incluye CORS) | **No ejecutado por el asistente** |
+| Pruebas PostgreSQL real | **Pendiente** |
 | `npm audit` | **Pendiente** |
 
-Pegar aquí la salida de `npm run test:report` cuando se ejecute con dependencias instaladas.
+Pegar aquí la salida de `npm run test:report` y `npm run doctor` al ejecutarlas.
