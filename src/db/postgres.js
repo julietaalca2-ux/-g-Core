@@ -3,14 +3,49 @@ import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 const { Pool } = pg;
 
-export async function createPostgresDatabase(connectionString) {
-  const pool = new Pool({ connectionString, max: 10, ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined });
-  const query = (sql, values=[]) => pool.query(sql, values);
+const SCHEMA_NAME = /^ogtest_[a-f0-9]{6,32}$/;
+const MIGRATION_SQL = new URL('./schema.postgres.sql', import.meta.url);
+
+/**
+ * @param {string} connectionString
+ * @param {{ schema?: string, pool?: object }} [options]
+ *   schema: schema aislado SOLO para pruebas (debe cumplir /^ogtest_[a-f0-9]{6,32}$/).
+ *   pool:   pool inyectado (pruebas unitarias sin base real).
+ */
+export async function createPostgresDatabase(connectionString, { schema, pool: injectedPool } = {}) {
+  if (schema !== undefined && !SCHEMA_NAME.test(schema)) throw new Error('Nombre de schema de pruebas inválido');
+  const pool = injectedPool ?? new Pool({
+    connectionString,
+    max: 10,
+    ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined,
+    // Se aplica en el arranque de cada conexión (sin carreras): el nombre ya está validado arriba.
+    ...(schema ? { options: `-c search_path=${schema}` } : {})
+  });
+  const query = (sql, values = []) => pool.query(sql, values);
   return {
     driver: 'postgres',
     async migrate() {
-      const schema = fs.readFileSync(new URL('./schema.postgres.sql', import.meta.url), 'utf8');
-      await query(schema);
+      const ddl = fs.readFileSync(MIGRATION_SQL, 'utf8');
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        if (schema) await client.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
+        await client.query(ddl);
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw e;
+      } finally {
+        client.release();
+      }
+    },
+    isUniqueViolation(e) { return e?.code === '23505'; },
+    async setUserStatus(id, status) { await query('UPDATE users SET status = $1 WHERE id = $2', [status, id]); },
+    /** Solo elimina el schema de pruebas creado por este adaptador; nunca otro. */
+    async dropSchema() {
+      if (!schema) return;
+      if (!SCHEMA_NAME.test(schema)) throw new Error('Se niega a eliminar un schema que no es de pruebas');
+      await pool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
     },
     async countOwners() {
       const r = await query("SELECT COUNT(*)::int AS count FROM users WHERE role = 'owner' AND status = 'active'");

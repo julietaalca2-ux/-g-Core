@@ -4,9 +4,10 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 export function createSqliteDatabase(filename) {
-  const absolute = path.resolve(filename);
-  fs.mkdirSync(path.dirname(absolute), { recursive: true });
-  const db = new Database(absolute);
+  const inMemory = filename === ':memory:';
+  const target = inMemory ? filename : path.resolve(filename);
+  if (!inMemory) fs.mkdirSync(path.dirname(target), { recursive: true });
+  const db = new Database(target);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   const run = (sql, params = []) => db.prepare(sql).run(...params);
@@ -22,6 +23,8 @@ export function createSqliteDatabase(filename) {
     async countOwners() {
       return get("SELECT COUNT(*) AS count FROM users WHERE role = 'owner' AND status = 'active'").count;
     },
+    isUniqueViolation(e) { return typeof e?.code === 'string' && e.code.startsWith('SQLITE_CONSTRAINT'); },
+    async setUserStatus(id, status) { run('UPDATE users SET status = ? WHERE id = ?', [status, id]); },
     async findUserByEmail(email) { return get('SELECT * FROM users WHERE email = ?', [email]); },
     async findUserById(id) { return get('SELECT id,email,display_name,role,status,created_at FROM users WHERE id = ?', [id]); },
     async createUser({ email, passwordHash, displayName, role }) {
