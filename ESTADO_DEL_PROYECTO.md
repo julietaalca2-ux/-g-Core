@@ -1,7 +1,31 @@
 # Estado de ÖG Core
 
-Versión: 0.1.0
-Estado: base inicial generada; requiere instalación de dependencias y ejecución de pruebas en el entorno destino.
+Versión: 0.1.2 (Fase 1 en curso, NO cerrada)
+Estado: correcciones y pruebas escritas. **SQLite y PostgreSQL NO están verificados**: faltan dependencias (sin red al generar el ZIP) y no existe `package-lock.json`. Ver `docs/TESTING.md`.
+
+## Cambios en 0.1.2
+- **Corregido:** en `migrate()` del adaptador PostgreSQL, una variable local `schema` ocultaba el parámetro `schema` (error TDZ). Ahora el DDL se llama `ddl`.
+- Migración PostgreSQL dentro de una transacción (BEGIN/COMMIT/ROLLBACK) y con liberación garantizada de la conexión.
+- Schema aislado de pruebas por opción de conexión (`-c search_path`), sin carreras; nombre validado con `/^ogtest_[a-f0-9]{6,32}$/`.
+- `dropSchema()` solo elimina el schema `ogtest_*` creado por ese adaptador; se niega a tocar cualquier otro (no afecta otras bases ni schemas, incluido `public`).
+- `npm run check` ahora revisa TODOS los `.js` de `src`, `test`, `test-support` y `scripts` (19 archivos).
+- Nuevas pruebas unitarias del adaptador con pool simulado (`test/postgres-adapter.test.js`): migración, rollback, nombres de schema rechazados y limpieza acotada.
+- Test de `/health` compara con la versión de `package.json` (ya no está fija).
+- Pruebas de CORS ampliadas con `node:http` (preflight, método no permitido, sin Origin, `CORS_BLOCKED`, ausencia de `Access-Control-Allow-Origin`, coincidencia exacta de origen). Escritas pero **no ejecutadas**.
+- Corregido el título engañoso de un subtest en la suite compartida y la cobertura descrita en `docs/TESTING.md`.
+- Se conservan todas las correcciones de seguridad de 0.1.1.
+
+Verificado realmente en el entorno de desarrollo: `npm run check` (19/19) y `test/postgres-adapter.test.js` (5/5) ejecutado con un módulo `pg` simulado (solo lógica del adaptador; no es PostgreSQL real).
+
+## Cambios en 0.1.1
+- Setup: comparación de clave en tiempo constante; índice único parcial que garantiza un solo propietario (protege contra setups simultáneos); auditoría de intentos denegados.
+- Login: igualación de tiempo para usuarios inexistentes (anti-enumeración); auditoría de fallos; rate limit específico (`AUTH_RATE_LIMIT_MAX`).
+- JWT fijado a HS256.
+- Config: rechaza los valores de ejemplo `REEMPLAZAR...` para JWT_SECRET y CORE_SETUP_KEY.
+- Errores: JSON inválido → 400, cuerpo grande → 413 (antes 500).
+- SQLite en memoria para pruebas; schema aislado para PostgreSQL de pruebas.
+- Suite compartida SQLite/PostgreSQL, pruebas de setup, auth, admin y seguridad.
+- Versión de /health leída de package.json.
 
 ## Incluido
 - Configuración con Zod y `.env.example`.
@@ -15,16 +39,16 @@ Estado: base inicial generada; requiere instalación de dependencias y ejecució
 - Auditoría básica.
 - Helmet, CORS allowlist y rate limit.
 - README, arquitectura, operaciones y roadmap.
-- Pruebas Node test para health, 401 y hashing.
+- Pruebas Node test (ver docs/TESTING.md).
 
 ## No verificado en este entorno
 No se ejecutó `npm install`, ni pruebas con PostgreSQL real, ni pruebas de carga o auditoría externa. Ejecutar en una máquina con Node 20.11+:
 `npm install && npm run check && npm test`
 
 ## Pendiente
-- Revisar dependencias y fijar lockfile mediante `npm install`.
-- Probar ambos motores de base de datos.
-- Añadir tests de setup/login end-to-end.
+- Ejecutar `npm install`, generar y commitear package-lock.json.
+- Ejecutar pruebas en SQLite y PostgreSQL reales y documentar resultados.
+- `npm audit`.
 - Completar gestión de usuarios y permisos granulares.
 - Refresh tokens, revocación de sesiones y MFA.
 - Rate limiting compartido para múltiples instancias.

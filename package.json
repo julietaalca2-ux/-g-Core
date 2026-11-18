@@ -1,6 +1,6 @@
 {
   "name": "og-core",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "description": "Núcleo modular de servicios para la plataforma ÖG",
   "type": "module",
@@ -8,8 +8,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test",
-    "check": "node --check src/server.js && node --check src/app.js"
+    "test": "node --test --test-concurrency=1",
+    "test:report": "node --test --test-concurrency=1 --test-reporter=spec",
+    "check": "node scripts/check.js",
+    "audit:deps": "npm audit --omit=dev"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

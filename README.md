@@ -108,3 +108,7 @@ og-core/
 ## Licencia
 
 Uso privado del proyecto ÖG. No publicar secretos, datos personales ni bases de datos.
+
+
+## Pruebas
+Ver `docs/TESTING.md`. Resumen: `npm install && npm run check && npm run test:report`. Para PostgreSQL definir `TEST_DATABASE_URL` (base desechable).
