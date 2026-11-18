@@ -1,4 +1,7 @@
-import { config, corsOrigins } from './config.js';
+let loaded;
+try { loaded = await import('./config.js'); }
+catch (e) { console.error(e?.name === 'ConfigError' ? e.message : e); process.exit(1); }
+const { config, corsOrigins } = loaded;
 import { createDatabase } from './db/index.js';
 import { createApp } from './app.js';
 

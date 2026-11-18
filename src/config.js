@@ -21,14 +21,27 @@ const schema = z.object({
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10)
 });
 
-const parsed = schema.safeParse(process.env);
-if (!parsed.success) {
-  console.error('Configuración inválida:', parsed.error.flatten().fieldErrors);
-  process.exit(1);
+export class ConfigError extends Error {
+  constructor(problems) {
+    super('Configuración inválida de ÖG Core:\n' + problems.map(p => `  - ${p}`).join('\n'));
+    this.name = 'ConfigError';
+    this.problems = problems;
+  }
 }
-if (parsed.data.DATABASE_DRIVER === 'postgres' && !parsed.data.DATABASE_URL) {
-  console.error('DATABASE_URL es obligatorio cuando DATABASE_DRIVER=postgres');
-  process.exit(1);
+
+/** Valida variables de entorno. Lanza ConfigError (con el detalle) en vez de terminar el proceso en silencio. */
+export function loadConfig(env = process.env) {
+  const parsed = schema.safeParse(env);
+  if (!parsed.success) {
+    throw new ConfigError(parsed.error.issues.map(i => `${i.path.join('.') || '(raíz)'}: ${i.message}`));
+  }
+  if (parsed.data.DATABASE_DRIVER === 'postgres' && !parsed.data.DATABASE_URL) {
+    throw new ConfigError(['DATABASE_URL: es obligatorio cuando DATABASE_DRIVER=postgres']);
+  }
+  const config = Object.freeze(parsed.data);
+  return { config, corsOrigins: config.CORS_ORIGINS.split(',').map(x => x.trim()).filter(Boolean) };
 }
-export const config = Object.freeze(parsed.data);
-export const corsOrigins = config.CORS_ORIGINS.split(',').map(x => x.trim()).filter(Boolean);
+
+const loaded = loadConfig(process.env);
+export const config = loaded.config;
+export const corsOrigins = loaded.corsOrigins;
