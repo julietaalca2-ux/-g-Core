@@ -23,7 +23,9 @@ export function createSqliteDatabase(filename) {
     async countOwners() {
       return get("SELECT COUNT(*) AS count FROM users WHERE role = 'owner' AND status = 'active'").count;
     },
-    isUniqueViolation(e) { return typeof e?.code === 'string' && e.code.startsWith('SQLITE_CONSTRAINT'); },
+    isUniqueViolation(e) {
+      return (typeof e?.code === 'string' && e.code.startsWith('SQLITE_CONSTRAINT')) || /UNIQUE constraint failed/i.test(String(e?.message ?? ''));
+    },
     async setUserStatus(id, status) { run('UPDATE users SET status = ? WHERE id = ?', [status, id]); },
     async findUserByEmail(email) { return get('SELECT * FROM users WHERE email = ?', [email]); },
     async findUserById(id) { return get('SELECT id,email,display_name,role,status,created_at FROM users WHERE id = ?', [id]); },
