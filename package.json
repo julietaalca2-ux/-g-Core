@@ -1,6 +1,6 @@
 {
   "name": "og-core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Núcleo modular de servicios para la plataforma ÖG",
   "type": "module",
@@ -8,8 +8,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test --test-concurrency=1",
-    "test:report": "node --test --test-concurrency=1 --test-reporter=spec",
+    "test": "node scripts/test.js",
+    "test:raw": "node --test --test-concurrency=1",
+    "doctor": "node scripts/doctor.js",
+    "test:report": "node scripts/test.js",
     "check": "node scripts/check.js",
     "audit:deps": "npm audit --omit=dev"
   },

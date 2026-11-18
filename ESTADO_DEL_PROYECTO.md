@@ -1,7 +1,21 @@
 # Estado de ÖG Core
 
-Versión: 0.1.2 (Fase 1 en curso, NO cerrada)
+Versión: 0.1.3 (Fase 1 en curso, NO cerrada)
 Estado: correcciones y pruebas escritas. **SQLite y PostgreSQL NO están verificados**: faltan dependencias (sin red al generar el ZIP) y no existe `package-lock.json`. Ver `docs/TESTING.md`.
+
+## Cambios en 0.1.3 (fallo de `test/sqlite.test.js`)
+**Causa real: no confirmada.** El resultado `test failed` en `test/sqlite.test.js:1:1` indica que el proceso de ese archivo terminó con error sin reportar subpruebas (típico de `process.exit`, excepción no capturada o error de importación). Sin acceso a red no pude instalar las dependencias ni reproducir el fallo en el entorno de desarrollo, y no tengo la salida original. Lo que sí se verificó: el SQL (`schema.sql`, índice único parcial, auditoría, `LIMIT`) y el adaptador funcionan sobre un motor SQLite real (usando `node:sqlite` mediante una capa de compatibilidad temporal; no es `better-sqlite3`).
+
+Causas probables eliminadas o expuestas:
+- `config.js` terminaba el proceso con `process.exit(1)` ante configuración inválida, sin que el motivo llegara al reporte de pruebas. Ahora `loadConfig()` lanza `ConfigError` con la lista de problemas, y `server.js` la muestra claramente.
+- Las pruebas dependían del entorno (`DATABASE_DRIVER`, `.env`, variables de Codespaces). `test-support/env.js` ahora sobrescribe todas las variables y desactiva la lectura de `.env` (verificado con variables hostiles).
+- `isUniqueViolation` en SQLite también reconoce el mensaje `UNIQUE constraint failed`.
+
+Diagnóstico mejorado:
+- `npm test` / `npm run test:report` ejecutan cada archivo de prueba directamente con `node` (no por el subproceso de `node --test`), así excepciones, salidas y errores de importación se ven completos; al final hay un resumen por archivo. `npm run test:raw` conserva el comportamiento anterior.
+- `npm run doctor` comprueba Node, cada dependencia, `better-sqlite3` nativo (incluido el índice único parcial), la configuración de pruebas y el adaptador SQLite, e indica qué falla.
+- La suite compartida informa método, ruta, estado y cuerpo recibido cuando un endpoint responde mal, y distingue "sin respuesta" (con causa de red) de un estado HTTP incorrecto.
+- Nuevas pruebas: `test/config.test.js` (4) y estructura ampliada.
 
 ## Cambios en 0.1.2
 - **Corregido:** en `migrate()` del adaptador PostgreSQL, una variable local `schema` ocultaba el parámetro `schema` (error TDZ). Ahora el DDL se llama `ddl`.
