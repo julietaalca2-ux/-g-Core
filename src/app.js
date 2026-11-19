@@ -15,10 +15,27 @@ export function createApp({ db, config, corsOrigins }) {
   if (config.TRUST_PROXY === 'true') app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin(origin, cb) {
-    if (!origin || corsOrigins.includes(origin)) return cb(null,true);
-    return cb(new Error('Origen no permitido por CORS'));
-  }, methods:['GET','POST','PATCH','DELETE'], allowedHeaders:['Content-Type','Authorization'] }));
+  // Permite los orígenes configurados y el mismo host que está sirviendo esta petición.
+  // En Render, el TLS termina en el proxy: comparar el esquema con req.protocol
+  // puede rechazar el mismo host si TRUST_PROXY está desactivado. Comparamos host
+  // (incluido el puerto) y validamos que Origin sea una URL HTTP(S) sin credenciales.
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowed = [...corsOrigins];
+    if (origin && !allowed.includes(origin)) {
+      const host = String(req.headers.host || '').toLowerCase();
+      try {
+        const parsedOrigin = new URL(origin);
+        if (host && ['http:', 'https:'].includes(parsedOrigin.protocol) &&
+            !parsedOrigin.username && !parsedOrigin.password && parsedOrigin.host.toLowerCase() === host &&
+            parsedOrigin.origin !== 'null') {
+          allowed.push(parsedOrigin.origin);
+        }
+      } catch { /* origen inválido: no se añade */ }
+    }
+    cors({ origin(o, cb) { if (!o || allowed.includes(o)) return cb(null, true); cb(new Error('Origen no permitido por CORS')); },
+      methods:['GET','POST','PATCH','DELETE'], allowedHeaders:['Content-Type','Authorization'] })(req, res, next);
+  });
   app.use(express.json({ limit:'32kb', strict:true }));
   app.use(rateLimit({ windowMs:config.RATE_LIMIT_WINDOW_MS, limit:config.RATE_LIMIT_MAX, standardHeaders:'draft-7', legacyHeaders:false }));
   app.get('/health', (_req,res) => res.json({ status:'ok', service:'og-core', version, timestamp:new Date().toISOString() }));
