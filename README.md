@@ -1,6 +1,6 @@
 # ÖG Core
 
-Núcleo backend independiente para ÖG. Esta primera versión es un **monolito modular**: una aplicación desplegable con módulos separados por responsabilidad. No es todavía una infraestructura distribuida ni debe considerarse lista para producción sin revisión y pruebas en el entorno real.
+Núcleo backend independiente para ÖG. Esta versión 0.3.0 se entrega como **candidata a estable**, no como versión estable: todavía requiere revisión independiente y validación en el entorno de destino. La arquitectura es un **monolito modular**, una aplicación desplegable con módulos separados por responsabilidad; no es una infraestructura distribuida.
 
 ## Requisitos
 
@@ -24,8 +24,10 @@ posteriores. El backend v0.2.0 se conserva como núcleo de identidad, sesiones, 
 
 ```bash
 cp .env.example .env
-npm install
+npm ci
 ```
+
+`package-lock.json` fija las versiones resueltas para instalaciones reproducibles. `npm ci` usa ese lockfile y no debe reemplazarse por `npm install` para validar este paquete.
 
 Generá dos secretos diferentes (uno para JWT y otro para el setup inicial). Por ejemplo, con Node:
 
@@ -39,7 +41,7 @@ Para el primer arranque, dejá `DATABASE_DRIVER=sqlite`. Luego:
 
 ```bash
 npm run check
-npm test
+npm run test:report
 npm start
 ```
 
@@ -113,6 +115,7 @@ og-core/
 ├── .env.example
 ├── .gitignore
 ├── package.json
+├── package-lock.json
 └── README.md
 ```
 
@@ -126,11 +129,15 @@ og-core/
 - Helmet, CORS allowlist (GET, POST, PATCH, DELETE), consultas parametrizadas, auditoría de acciones de cuenta y administrativas (incluidos los intentos denegados).
 - La ruta de setup queda cerrada después de crear el primer owner.
 - `POST /auth/register` responde 409 si el correo existe (permite saber si un correo está registrado; mitigado por rate limit). Si no se quiere, desactivar el registro público.
-- No hay todavía refresh tokens rotatorios (Fase 3), recuperación de contraseña, verificación de correo, MFA, cola de eventos, métricas ni panel web. El token de acceso dura `JWT_EXPIRES_IN` (12 h por defecto).
+- No hay todavía refresh tokens rotatorios (Fase 3), recuperación de contraseña, verificación de correo, MFA, cola de eventos ni métricas. El dashboard administrativo básico sí forma parte de v0.3.0. El token de acceso dura `JWT_EXPIRES_IN` (12 h por defecto).
 - El rate limit es en memoria y por proceso; para varias instancias debe migrarse a un almacén compartido.
 - La auditoría no es criptográficamente inmutable: los permisos de base de datos y backups deben protegerla.
 - El primer owner debe crearse con acceso local o canal seguro. No expongas la clave de setup a Internet.
 - Antes de producción se requieren pruebas de carga, revisión independiente de seguridad, TLS, backups probados, gestión de secretos y políticas operativas.
+
+### Estado de la alerta de Zod 3
+
+Este paquete conserva Zod 3 (`package-lock.json` fija la versión resuelta); no se migró a Zod 4. GitHub mantiene listado GHSA-mrhx-c7xc-m3w5 como alerta alta para versiones anteriores a 4.6.6, mientras que el CVE asociado fue rechazado por CVE.org y NVD. ÖG Core no define esquemas Zod de arrays, sets o maps y limita los cuerpos JSON a 32 KB. Esto describe el alcance observado, pero **no borra la alerta del escáner** ni sustituye una revisión de seguridad. Referencias: [GHSA](https://github.com/advisories/GHSA-MRHX-C7XC-M3W5), [CVE.org](https://www.cve.org/CVERecord?id=CVE-2023-54404).
 
 ## Conexión futura con ÖG
 
@@ -142,4 +149,4 @@ Uso privado del proyecto ÖG. No publicar secretos, datos personales ni bases de
 
 
 ## Pruebas
-Ver `docs/TESTING.md`. Resumen: `npm install && npm run check && npm run test:report`. Para PostgreSQL definir `TEST_DATABASE_URL` (base desechable).
+Ver `docs/TESTING.md`. Instalación reproducible y verificación: `npm ci && npm run check && npm run test:report`. Las pruebas PostgreSQL reales requieren una base desechable explícitamente configurada mediante `TEST_DATABASE_URL`; no se conectan por defecto.
