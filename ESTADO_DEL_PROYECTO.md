@@ -22,3 +22,12 @@ Refresh tokens rotatorios, recuperación de contraseña, verificación de correo
 
 ## Restricción
 No conectar a producción de ÖG ni modificar Supabase hasta aprobar la revisión y diseñar la estrategia de identidad.
+
+
+## Entrega v0.3.0 — Interfaz web inicial
+- Se agregó `public/index.html`, `public/app.css` y `public/app.js`.
+- El servidor Express sirve la web desde el mismo origen (`/`, `/admin`, `/social`).
+- La interfaz incluye setup del owner, login, registro, dashboard, usuarios, auditoría, API, perfil y cierre de sesiones.
+- Se conserva el backend v0.2.0 y sus rutas; no se reemplaza SQLite ni PostgreSQL.
+- Límite: no hay todavía feed social, publicaciones, comentarios, seguidores, chat ni multimedia.
+- La interfaz muestra el estado HTTP real; el estado interno de la base no se consulta directamente desde el navegador.

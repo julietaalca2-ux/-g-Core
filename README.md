@@ -9,6 +9,17 @@ Núcleo backend independiente para ÖG. Esta primera versión es un **monolito m
 - Para SQLite: no requiere servidor de base de datos.
 - Para PostgreSQL: una instancia PostgreSQL accesible y una URL de conexión.
 
+## Panel web Ög (v0.3.0)
+
+El servidor ahora entrega una interfaz web responsive en `/` (también `/admin` y `/social`).
+Incluye acceso del propietario inicial, login/registro, panel administrativo, estado HTTP,
+listado y gestión de usuarios según permisos, auditoría, perfil básico y seguridad de sesiones.
+Los archivos estáticos están en `public/` y se sirven desde el mismo origen que la API.
+
+**Importante:** esta interfaz no implementa todavía publicaciones, comentarios, seguidores,
+mensajería ni carga de medios. Esas funciones sociales requieren endpoints y módulos de producto
+posteriores. El backend v0.2.0 se conserva como núcleo de identidad, sesiones, permisos y auditoría.
+
 ## Instalación rápida
 
 ```bash
@@ -32,7 +43,7 @@ npm test
 npm start
 ```
 
-Servidor predeterminado: `http://127.0.0.1:8787`.
+Servidor predeterminado: `http://127.0.0.1:8787`. Abrí esa dirección para usar la web.
 
 ## Inicializar propietario
 

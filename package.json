@@ -1,10 +1,12 @@
 {
   "name": "og-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Núcleo modular de servicios para la plataforma ÖG",
+  "description": "Núcleo modular de servicios y panel web para la plataforma ÖG",
   "type": "module",
-  "engines": { "node": ">=20.11.0" },
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
