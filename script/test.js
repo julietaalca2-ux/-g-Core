@@ -10,6 +10,9 @@ const only = process.argv.slice(2);
 const files = readdirSync(join(root, 'test')).filter(f => f.endsWith('.test.js')).sort()
   .filter(f => !only.length || only.some(o => f.includes(o)));
 
+const pre = spawnSync(process.execPath, [join(root, 'scripts', 'check.js')], { stdio: 'inherit' });
+if (pre.status !== 0) { console.error('\nNo se ejecutan las pruebas: corregí primero los problemas que informa la comprobación anterior.'); process.exit(1); }
+
 const results = [];
 for (const f of files) {
   console.log(`\n━━━ ${f} ━━━`);

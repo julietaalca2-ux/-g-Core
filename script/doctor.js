@@ -18,7 +18,7 @@ try {
   db.close();
 } catch (e) { fail('SQLite nativo (better-sqlite3)', e); }
 try {
-  await import('./../test-support/env.js');
+  await import('../test/support/env.js');
   const { loadConfig } = await import('../src/config.js');
   loadConfig(process.env); out(true, 'configuración de pruebas válida');
 } catch (e) { fail('configuración de pruebas', e); }
