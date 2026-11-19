@@ -8,11 +8,11 @@ const SETUP_KEY = process.env.CORE_SETUP_KEY;
 const PASSWORD = 'UnaClaveSegura-2026!';
 
 /** Falla mostrando método, ruta y cuerpo recibido, para identificar rápido qué endpoint se comportó mal. */
-function expectStatus(result, expected, what = '') {
+export function expectStatus(result, expected, what = '') {
   assert.equal(result.status, expected, `${what} esperado HTTP ${expected}, recibido ${result.status}; cuerpo: ${JSON.stringify(result.json)}`.trim());
 }
 
-async function boot(db, overrides = {}) {
+export async function boot(db, overrides = {}) {
   const cfg = { ...config, ...overrides };
   const app = createApp({ db, config: cfg, corsOrigins: ['http://localhost:3000'] });
   const server = await new Promise(r => { const s = app.listen(0, '127.0.0.1', () => r(s)); });
