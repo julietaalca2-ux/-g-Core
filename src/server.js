@@ -5,7 +5,6 @@ const { config, corsOrigins } = loaded;
 import { createDatabase } from './db/index.js';
 import { createApp } from './app.js';
 
-console.log(`[CORS] Orígenes permitidos (además del mismo origen): ${JSON.stringify(corsOrigins)}`);
 const db = await createDatabase();
 const app = createApp({ db, config, corsOrigins });
 const server = app.listen(config.PORT, config.HOST, () => {
