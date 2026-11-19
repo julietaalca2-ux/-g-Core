@@ -83,17 +83,17 @@ test('CORS: preflight OPTIONS desde origen permitido → 204 con métodos y cabe
   } });
   assert.equal(r.status, 204);
   assert.equal(r.headers['access-control-allow-origin'], ALLOWED);
-  assert.equal(r.headers['access-control-allow-methods'], 'GET,POST');
+  assert.equal(r.headers['access-control-allow-methods'], 'GET,POST,PATCH,DELETE');
   assert.equal(r.headers['access-control-allow-headers'], 'Content-Type,Authorization');
 });
 
 test('CORS: preflight de método no permitido no lo anuncia (el navegador lo bloqueará)', async t => {
   const base = await start(t);
-  for (const method of ['DELETE', 'PUT', 'PATCH']) {
+  for (const method of ['PUT', 'OPTIONS', 'TRACE']) {
     const r = await httpCall(base, { method: 'OPTIONS', path: '/api/v1/admin/audit', headers: { Origin: ALLOWED, 'Access-Control-Request-Method': method } });
     const allowed = String(r.headers['access-control-allow-methods'] ?? '');
     assert.ok(!allowed.split(',').includes(method), `${method} no debe figurar en Allow-Methods (${allowed})`);
-    assert.equal(allowed, 'GET,POST');
+    assert.equal(allowed, 'GET,POST,PATCH,DELETE');
   }
 });
 

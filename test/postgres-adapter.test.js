@@ -46,3 +46,36 @@ test('dropSchema() solo elimina su propio schema de pruebas', async () => {
   await (await createPostgresDatabase('postgres://x', { pool: noSchema.pool })).dropSchema();
   assert.deepEqual(noSchema.log, []); // sin schema de pruebas no ejecuta nada
 });
+
+function rowsPool(rowsFor) {
+  const calls = [];
+  return { calls, pool: { query: async (sql, values) => { calls.push({ sql: String(sql), values }); return rowsFor(String(sql)); }, end: async () => {} } };
+}
+test('fechas de PostgreSQL (Date) se normalizan a ISO, igual que SQLite', async () => {
+  const d = new Date('2026-05-05T10:00:00.000Z');
+  const { pool } = rowsPool(() => ({ rows: [{ id: 'x', email: 'a@b.co', created_at: d, locked_until: null }] }));
+  const db = await createPostgresDatabase('postgres://x', { pool });
+  const u = await db.findUserByEmail('a@b.co');
+  assert.equal(u.created_at, '2026-05-05T10:00:00.000Z');
+  assert.equal(u.locked_until, null);
+  assert.equal(await db.findUserById('x') !== undefined, true);
+});
+test('consultas de sesiones y usuarios usan parámetros (nunca interpolan valores)', async () => {
+  const { calls, pool } = rowsPool(() => ({ rows: [{ count: 0 }], rowCount: 2 }));
+  const db = await createPostgresDatabase('postgres://x', { pool });
+  const evil = "'; DROP TABLE users; --";
+  await db.listUsers({ limit: 5, offset: 0, status: evil, role: evil });
+  await db.updateUserProfile('id1', { displayName: evil, email: evil });
+  await db.createSession({ userId: 'u', expiresAt: 'e', userAgent: evil });
+  assert.equal(await db.revokeUserSessions('u', 's'), 2);
+  await db.pruneSessions('u', 9);
+  for (const c of calls) assert.ok(!c.sql.includes('DROP TABLE'), c.sql);
+  assert.ok(calls.some(c => c.values?.includes(evil)));
+});
+test('schema.postgres.sql: migración idempotente con columnas y tabla de sesiones de la Fase 2', async () => {
+  const { readFileSync } = await import('node:fs');
+  const ddl = readFileSync(new URL('../src/db/schema.postgres.sql', import.meta.url), 'utf8');
+  for (const col of ['updated_at', 'deleted_at', 'password_changed_at', 'failed_logins', 'locked_until']) assert.match(ddl, new RegExp(`ADD COLUMN IF NOT EXISTS ${col}`));
+  assert.match(ddl, /CREATE TABLE IF NOT EXISTS sessions/);
+  assert.match(ddl, /REFERENCES users\(id\) ON DELETE CASCADE/);
+});

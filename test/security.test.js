@@ -2,7 +2,7 @@ import './support/env.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hashPassword, verifyPassword, safeEqual } from '../src/security/passwords.js';
-import { signAccessToken, verifyAccessToken } from '../src/security/tokens.js';
+import { signAccessToken, verifyAccessToken, tokenExpiresAt } from '../src/security/tokens.js';
 
 test('password hashes are salted and verifiable', async () => {
   const hash = await hashPassword('UnaClaveSegura-2026!');
@@ -20,4 +20,9 @@ test('access token: firma y verifica con HS256 e issuer', () => {
   const p = verifyAccessToken(t);
   assert.equal(p.sub, 'u1'); assert.equal(p.iss, 'og-core');
   assert.throws(() => verifyAccessToken(t.slice(0, -2) + 'xx'));
+});
+test('access token: incluye sid de sesión y expiración legible', () => {
+  const t = signAccessToken({ id: 'u1', role: 'user' }, 'sesion-1');
+  assert.equal(verifyAccessToken(t).sid, 'sesion-1');
+  assert.ok(new Date(tokenExpiresAt(t)) > new Date());
 });
