@@ -1,6 +1,6 @@
 {
   "name": "og-core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "Núcleo modular de servicios para la plataforma ÖG",
   "type": "module",
