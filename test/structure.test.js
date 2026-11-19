@@ -30,3 +30,9 @@ test('package.json: scripts check/test apuntan a archivos existentes', () => {
   assert.ok(pkg.scripts['test:raw'].includes('node --test'));
   assert.equal(pkg.scripts.doctor, 'node scripts/doctor.js');
 });
+
+test('Node fijado a una versión con binarios de better-sqlite3 (evita que Render use un Node demasiado nuevo)', () => {
+  const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
+  assert.match(pkg.engines.node, /<23/);
+  assert.equal(readFileSync(new URL('.node-version', root), 'utf8').trim(), '22');
+});
