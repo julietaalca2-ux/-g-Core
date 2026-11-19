@@ -1,24 +1,36 @@
 import { verifyAccessToken } from '../security/tokens.js';
+import { hasPermission } from '../security/permissions.js';
+
+const deny = (res, status, code, message) => res.status(status).json({ error: { code, message } });
 
 export function authenticate(db) {
   return async (req, res, next) => {
     const header = req.headers.authorization || '';
     const [scheme, token] = header.split(' ');
-    if (scheme !== 'Bearer' || !token) return res.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Token requerido' } });
+    if (scheme !== 'Bearer' || !token) return deny(res, 401, 'UNAUTHENTICATED', 'Token requerido');
+    let payload;
+    try { payload = verifyAccessToken(token); } catch { return deny(res, 401, 'INVALID_TOKEN', 'Token inválido o vencido'); }
     try {
-      const payload = verifyAccessToken(token);
+      if (!payload.sid) return deny(res, 401, 'INVALID_SESSION', 'Sesión inválida');
+      const session = await db.findSession(payload.sid);
+      if (!session || session.revoked_at || session.user_id !== payload.sub || new Date(session.expires_at) <= new Date()) return deny(res, 401, 'INVALID_SESSION', 'Sesión inválida');
       const user = await db.findUserById(payload.sub);
-      if (!user || user.status !== 'active') return res.status(401).json({ error: { code: 'INVALID_SESSION', message: 'Sesión inválida' } });
-      req.user = user;
+      if (!user || user.status !== 'active') return deny(res, 401, 'INVALID_SESSION', 'Sesión inválida');
+      req.user = user; req.sessionId = session.id;
       next();
-    } catch {
-      return res.status(401).json({ error: { code: 'INVALID_TOKEN', message: 'Token inválido o vencido' } });
-    }
+    } catch (e) { next(e); }
   };
 }
 export function requireRoles(...roles) {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Permisos insuficientes' } });
+    if (!req.user || !roles.includes(req.user.role)) return deny(res, 403, 'FORBIDDEN', 'Permisos insuficientes');
+    next();
+  };
+}
+/** Exige un permiso concreto (ver security/permissions.js). */
+export function requirePermission(permission) {
+  return (req, res, next) => {
+    if (!req.user || !hasPermission(req.user.role, permission)) return deny(res, 403, 'FORBIDDEN', 'Permisos insuficientes');
     next();
   };
 }
