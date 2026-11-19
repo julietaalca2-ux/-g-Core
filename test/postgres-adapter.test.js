@@ -1,5 +1,5 @@
 // Pruebas unitarias del adaptador PostgreSQL con un pool simulado (NO sustituyen las pruebas con PostgreSQL real).
-import '../test-support/env.js';
+import './support/env.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPostgresDatabase } from '../src/db/postgres.js';

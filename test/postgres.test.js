@@ -1,8 +1,8 @@
-import '../test-support/env.js';
+import './support/env.js';
 import test from 'node:test';
 import { randomBytes } from 'node:crypto';
 import { createPostgresDatabase } from '../src/db/postgres.js';
-import { runApiSuite } from '../test-support/api-suite.js';
+import { runApiSuite } from './support/api-suite.js';
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url) {

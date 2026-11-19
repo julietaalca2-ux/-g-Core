@@ -12,7 +12,7 @@ const REQUIRED = [
   'src/db/index.js', 'src/db/sqlite.js', 'src/db/postgres.js', 'src/db/schema.sql', 'src/db/schema.postgres.sql',
   'src/middleware/auth.js', 'src/routes/auth.js', 'src/routes/admin.js',
   'src/security/passwords.js', 'src/security/tokens.js',
-  'test-support/env.js', 'test-support/api-suite.js',
+  'test/support/env.js', 'test/support/api-suite.js',
   'test/app.test.js', 'test/security.test.js', 'test/sqlite.test.js', 'test/postgres.test.js', 'test/postgres-adapter.test.js', 'test/config.test.js'
 ];
 

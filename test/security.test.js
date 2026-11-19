@@ -1,4 +1,4 @@
-import '../test-support/env.js';
+import './support/env.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hashPassword, verifyPassword, safeEqual } from '../src/security/passwords.js';
