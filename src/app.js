@@ -32,16 +32,29 @@ export function createApp({ db, config, corsOrigins }) {
     },
     hsts: config.NODE_ENV === 'production'
   }));
-  app.use(cors({ origin(origin, cb) {
-    console.log('[CORS] Origen recibido:', origin);
-    console.log('[CORS] Orígenes permitidos:', corsOrigins);
-
-    if (!origin || corsOrigins.includes(origin)) {
-      return cb(null, true);
-    }
-
-    return cb(new Error('Origen no permitido por CORS'));
-  }, methods:['GET','POST','PATCH','DELETE'], allowedHeaders:['Content-Type','Authorization'] }));
+  // Un origen está permitido si (a) coincide exactamente con la lista normalizada (CORS_ORIGINS + origen propio) o
+  // (b) es el mismo origen que el de esta petición (esquema + host): la web de ÖG se sirve desde el propio backend y el
+  // navegador envía la cabecera Origin también en los POST del mismo origen. Un origen de otro sitio nunca coincide con
+  // el Host al que apunta su petición, así que (b) no abre nada a terceros.
+  const allowed = new Set(corsOrigins);
+  const logged = new Set();
+  const isSameOrigin = (req, origin) => {
+    const host = req.get('host');
+    return Boolean(host) && origin === `${req.protocol}://${host}`;
+  };
+  app.use((req, res, next) => cors({
+    origin(origin, cb) {
+      if (!origin || allowed.has(origin) || isSameOrigin(req, origin)) return cb(null, true);
+      if (!logged.has(origin) && logged.size < 50) { // diagnóstico sin inundar los logs
+        logged.add(origin);
+        console.warn(`[CORS] Origen bloqueado: ${JSON.stringify(String(origin).slice(0, 200))}. Permitidos: ${JSON.stringify([...allowed])}`);
+      }
+      return cb(new Error('Origen no permitido por CORS'));
+    },
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 600
+  })(req, res, next));
   app.use(express.json({ limit:'32kb', strict:true }));
   app.use(rateLimit({ windowMs:config.RATE_LIMIT_WINDOW_MS, limit:config.RATE_LIMIT_MAX, standardHeaders:'draft-7', legacyHeaders:false }));
   app.get('/health', (_req,res) => res.json({
