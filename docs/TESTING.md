@@ -35,19 +35,15 @@ setup (validación, clave incorrecta, creación, 409, índice único de propieta
 
 **Seguridad y adaptador:** `test/security.test.js` (hashing, comparación en tiempo constante, tokens HS256) y `test/postgres-adapter.test.js` (pool simulado: migración, rollback, nombres de schema rechazados, limpieza acotada).
 
+**Fase 2 (v0.2.0)** — `test/support/accounts-suite.js` (SQLite y PostgreSQL con las mismas aserciones): registro (validaciones, duplicados, mass-assignment, registro deshabilitado); sesiones (logout, logout-all, token sin `sid`, sesión vencida/ajena, límite de sesiones); perfil y cambio de correo/contraseña (reconfirmación, revocación de otras sesiones); desactivación, reactivación y eliminación controlada (correo liberado, owner protegido); roles y jerarquía administrativa (401/403 en todas las rutas, admin vs owner, degradación inmediata, paginación y filtros, auditoría); bloqueo por intentos fallidos; rate limit. Además `test/permissions.test.js` (permisos y validación), `test/migration.test.js` (base 0.1.x → 0.2.0) y pruebas del adaptador PostgreSQL con pool simulado.
+
 ## Resultados reales
+Entorno de generación de v0.2.0: **sin red**, por lo que no se pudo ejecutar `npm install`. Las pruebas se ejecutaron con Node 22 y `zod` real, usando dobles mínimos de `express`, `helmet`, `cors`, `express-rate-limit`, `bcryptjs`, `jsonwebtoken` y `better-sqlite3` (sobre `node:sqlite`) que NO se incluyen en el ZIP.
+
 | Comprobación | Estado |
 |---|---|
-| `npm run check` (23 archivos .js) | Ejecutado en el entorno de desarrollo: correcto |
-| `test/config.test.js` (4), con `zod` real y `dotenv` simulado | Ejecutado: 4/4 correctas, también con variables de entorno hostiles |
-| `test/structure.test.js` (2) | Ejecutado: 2/2 correctas |
-| `test/postgres-adapter.test.js` (5), con `pg` simulado | Ejecutado: 5/5 correctas (lógica del adaptador, no PostgreSQL real) |
-| SQL y adaptador SQLite sobre motor SQLite real (vía `node:sqlite`, capa temporal) | Ejecutado: correcto (migración idempotente, índice único de propietario, auditoría, límites) |
-| `npm install` en Codespaces | Correcto (informado por el usuario) |
-| `better-sqlite3` importa en Codespaces | Correcto (informado por el usuario) |
-| `test/sqlite.test.js` y suite compartida con `better-sqlite3`, express, etc. reales | **No ejecutadas por el asistente; fallo de v0.1.2 sin causa confirmada** |
-| `test/app.test.js` (incluye CORS) | **No ejecutado por el asistente** |
-| Pruebas PostgreSQL real | **Pendiente** |
+| `npm test` con dobles de dependencias (9/9 archivos; SQLite: 19 pruebas de la suite compartida) | Ejecutado: correcto |
+| Pruebas de mutación (quitar revocación en logout/cambio de contraseña, jerarquía admin, validación de sesión, `.strict()`) | Ejecutado: las pruebas fallan como corresponde |
+| `npm install` + `npm test` con dependencias reales | **Pendiente: ejecutar en tu máquina** |
+| Pruebas PostgreSQL real (`TEST_DATABASE_URL`) | **Pendiente** (SQL y adaptador solo verificados con pool simulado) |
 | `npm audit` | **Pendiente** |
-
-Pegar aquí la salida de `npm run test:report` y `npm run doctor` al ejecutarlas.

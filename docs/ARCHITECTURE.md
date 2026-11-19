@@ -18,13 +18,15 @@ Monolito modular primero; separación de servicios solo cuando métricas, equipo
 
 El núcleo no contiene todavía lógica de publicaciones, historias, Loors ni archivos multimedia. Esas capacidades pertenecen a módulos de producto que se integrarán mediante contratos API.
 
-## Flujo de autenticación
+## Flujo de autenticación (v0.2.0)
 
-1. El propietario se crea una sola vez mediante `/setup` y una clave secreta.
-2. El usuario inicia sesión con email y contraseña.
-3. Core emite JWT firmado.
-4. El middleware verifica firma, emisor y vencimiento, y vuelve a consultar el usuario en la base.
-5. Las rutas administrativas aplican autorización por rol.
+1. El propietario se crea una sola vez mediante `/setup`; el resto de usuarios con `/register`.
+2. `/register`, `/setup` y `/login` crean una fila en `sessions` y emiten un JWT (HS256) con `sid`.
+3. El middleware verifica firma, emisor y vencimiento; luego exige sesión vigente y no revocada, y usuario `active` (consulta la base en cada petición).
+4. Las rutas aplican permisos (`security/permissions.js`) y, en acciones sobre otros usuarios, la jerarquía de roles (`canManageUser`).
+5. Logout, cambio de contraseña, suspensión, desactivación y eliminación revocan sesiones.
+
+Estados de cuenta: `active`, `suspended` (por staff), `deactivated` (voluntaria), `deleted` (anonimizada; la fila se conserva por integridad de auditoría).
 
 ## Evolución propuesta
 

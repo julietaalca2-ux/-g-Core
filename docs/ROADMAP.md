@@ -31,3 +31,13 @@
 - [ ] npm audit
 
 Siguiente: Fase 2 (arquitectura y bases de datos), tras aprobar los resultados de la Fase 1.
+
+## Fase 2 (v0.2.0) — cuentas y accesos
+- [x] Registro, correos únicos, hash bcrypt, login/logout, sesiones revocables
+- [x] Endpoints privados protegidos, perfil, cambio de contraseña
+- [x] Desactivación y eliminación controlada
+- [x] Roles/permisos y funciones administrativas protegidas
+- [x] Validaciones, bloqueo por intentos, rate limit, pruebas SQLite/PostgreSQL
+- [ ] Ejecución real de la suite con dependencias reales y PostgreSQL real (ver docs/TESTING.md)
+
+Siguiente (NO iniciado): Fase 3.
