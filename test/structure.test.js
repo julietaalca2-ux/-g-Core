@@ -34,5 +34,5 @@ test('package.json: scripts check/test apuntan a archivos existentes', () => {
 test('Node fijado a una versión con binarios de better-sqlite3 (evita que Render use un Node demasiado nuevo)', () => {
   const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'));
   assert.match(pkg.engines.node, /<23/);
-  assert.equal(readFileSync(new URL('.node-version', root), 'utf8').trim(), '22');
+  assert.match(readFileSync(new URL('.node-version', root), 'utf8').trim(), /^22\.\d+\.\d+$/); // versión exacta, no alias
 });
