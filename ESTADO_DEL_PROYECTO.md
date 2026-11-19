@@ -1,16 +1,14 @@
 # Estado de ÖG Core
 
-Versión: 0.3.0 candidata a estable (no declarada estable; pendiente de revisión independiente)
+Versión: 0.3.0 (Fase 2 backend + Interfaz web Dashboard v0.3.0)
 
 ## Alcance de la Fase 2 (implementado)
 Registro y cuentas, correos únicos, bcrypt, login/logout con sesiones persistentes revocables (JWT con `sid`), endpoints privados protegidos, consulta/actualización de cuenta, cambio de contraseña, desactivación y eliminación controlada, roles y permisos (owner/admin/user), funciones administrativas protegidas con jerarquía, validación estricta, bloqueo por intentos fallidos, rate limit, auditoría, pruebas para SQLite y PostgreSQL. Ver README (API) y docs/TESTING.md.
 
-## Verificación honesta de la candidata
-- El paquete incluye `package-lock.json`; `npm ci` se usa para instalar las versiones fijadas.
-- Verificación ejecutada con dependencias reales: `npm run check` aprobó 29/29 archivos y `npm run test:report` aprobó 53 pruebas, con 0 fallidas y 1 omitida.
-- La prueba omitida es PostgreSQL real; no se definió `TEST_DATABASE_URL`. El adaptador PostgreSQL solo se probó con un pool simulado.
-- `npm audit --omit=dev` informa una alerta alta GHSA-mrhx-c7xc-m3w5 en Zod 3. Se mantiene Zod 3; CVE.org y NVD marcan el CVE asociado como rechazado. Ver `docs/TESTING.md`.
-- No se declara estable hasta completar revisión independiente y las validaciones del entorno de destino.
+## Verificación honesta
+- Sin red al generar el ZIP: no se hizo `npm install`. Las pruebas pasaron (9/9 archivos) con dobles de dependencias y `zod` real; hay que repetirlas con dependencias reales.
+- **PostgreSQL real NO verificado** (solo lógica con pool simulado). Ejecutar con `TEST_DATABASE_URL`.
+- `package-lock.json` y `npm audit` siguen pendientes.
 
 ## Cambios respecto a 0.1.4
 - Esquema: columnas `updated_at`, `deleted_at`, `password_changed_at`, `failed_logins`, `locked_until` y tabla `sessions`. Bases 0.1.x migran solas (probado en SQLite).
@@ -20,7 +18,7 @@ Registro y cuentas, correos únicos, bcrypt, login/logout con sesiones persisten
 - Nuevas variables: `REGISTRATION_ENABLED`, `LOGIN_MAX_FAILURES`, `LOGIN_LOCK_MINUTES`, `MAX_ACTIVE_SESSIONS`.
 
 ## Fuera de alcance (Fase 3 y posteriores)
-Refresh tokens rotatorios, recuperación de contraseña, verificación de correo, MFA, funciones sociales y observabilidad.
+Refresh tokens rotatorios, recuperación de contraseña, verificación de correo, MFA, panel, observabilidad.
 
 ## Restricción
 No conectar a producción de ÖG ni modificar Supabase hasta aprobar la revisión y diseñar la estrategia de identidad.
