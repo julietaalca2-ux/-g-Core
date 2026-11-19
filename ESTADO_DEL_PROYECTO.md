@@ -1,6 +1,6 @@
 # Estado de ÖG Core
 
-Versión: 0.2.0 (Fase 2 implementada; Fase 3 NO iniciada)
+Versión: 0.3.0 (Fase 2 backend + Interfaz web Dashboard v0.3.0)
 
 ## Alcance de la Fase 2 (implementado)
 Registro y cuentas, correos únicos, bcrypt, login/logout con sesiones persistentes revocables (JWT con `sid`), endpoints privados protegidos, consulta/actualización de cuenta, cambio de contraseña, desactivación y eliminación controlada, roles y permisos (owner/admin/user), funciones administrativas protegidas con jerarquía, validación estricta, bloqueo por intentos fallidos, rate limit, auditoría, pruebas para SQLite y PostgreSQL. Ver README (API) y docs/TESTING.md.
