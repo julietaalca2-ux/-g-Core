@@ -33,7 +33,13 @@ export function createApp({ db, config, corsOrigins }) {
     hsts: config.NODE_ENV === 'production'
   }));
   app.use(cors({ origin(origin, cb) {
-    if (!origin || corsOrigins.includes(origin)) return cb(null,true);
+    console.log('[CORS] Origen recibido:', origin);
+    console.log('[CORS] Orígenes permitidos:', corsOrigins);
+
+    if (!origin || corsOrigins.includes(origin)) {
+      return cb(null, true);
+    }
+
     return cb(new Error('Origen no permitido por CORS'));
   }, methods:['GET','POST','PATCH','DELETE'], allowedHeaders:['Content-Type','Authorization'] }));
   app.use(express.json({ limit:'32kb', strict:true }));
