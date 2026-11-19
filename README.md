@@ -48,15 +48,34 @@ La respuesta contiene un token de acceso. Guardalo de forma segura.
 
 ## API v1
 
+Autenticación: `Authorization: Bearer TOKEN`. Errores: `{ "error": { "code", "message", "details?" } }`.
+
 | Método | Ruta | Acceso | Función |
 |---|---|---|---|
 | GET | `/health` | Público | Estado del servicio |
-| POST | `/api/v1/auth/setup` | Clave de setup, una sola vez | Crear propietario inicial |
+| POST | `/api/v1/auth/setup` | Clave de setup, una vez | Crear propietario inicial |
+| POST | `/api/v1/auth/register` | Público (`REGISTRATION_ENABLED`) | Crear cuenta (rol `user`) |
 | POST | `/api/v1/auth/login` | Público | Iniciar sesión |
-| GET | `/api/v1/auth/me` | Bearer token | Consultar identidad propia |
-| GET | `/api/v1/admin/audit` | Owner/Admin | Consultar auditoría |
+| POST | `/api/v1/auth/logout` | Sesión | Cerrar la sesión actual (invalida el token) |
+| POST | `/api/v1/auth/logout-all` | Sesión | Cerrar todas las sesiones |
+| GET | `/api/v1/auth/me` | Sesión | Consultar usuario autenticado |
+| PATCH | `/api/v1/auth/me` | Sesión | Cambiar `displayName` y/o `email` (el correo exige `currentPassword`) |
+| POST | `/api/v1/auth/change-password` | Sesión | `currentPassword` + `newPassword`; revoca las demás sesiones |
+| POST | `/api/v1/auth/account/deactivate` | Sesión + `password` | Desactivar la propia cuenta (reversible por staff) |
+| DELETE | `/api/v1/auth/account` | Sesión + `password` | Eliminar la propia cuenta (anonimiza datos, libera el correo) |
+| GET | `/api/v1/admin/audit` | `audit:read` | Auditoría |
+| GET | `/api/v1/admin/users` | `users:read` | Listar (`limit`, `offset`, `status`, `role`) |
+| GET | `/api/v1/admin/users/:id` | `users:read` | Ver usuario |
+| POST | `/api/v1/admin/users/:id/suspend` | `users:suspend` | Suspender (revoca sesiones) |
+| POST | `/api/v1/admin/users/:id/reactivate` | `users:suspend` | Reactivar suspendido/desactivado |
+| PATCH | `/api/v1/admin/users/:id/role` | `users:role` (solo owner) | Cambiar rol a `admin` o `user` |
+| DELETE | `/api/v1/admin/users/:id` | `users:delete` | Eliminación controlada |
 
-Para `/api/v1/admin/audit` se usa `Authorization: Bearer TOKEN`.
+### Roles y permisos
+- **owner** (único): todos los permisos. No puede desactivarse, eliminarse ni degradarse.
+- **admin**: `audit:read`, `users:read`, `users:suspend`, `users:delete`, solo sobre usuarios con rol `user`.
+- **user**: sin permisos administrativos.
+Ningún actor administra a sí mismo por la vía administrativa. El rol se lee de la base en cada petición: un cambio de rol o una suspensión rigen de inmediato.
 
 ## PostgreSQL
 
@@ -88,14 +107,15 @@ og-core/
 
 ## Seguridad y límites conocidos de esta versión
 
-- Contraseñas con bcrypt (12 rondas).
-- JWT de acceso de corta duración configurable.
-- Middleware de autenticación y control de roles.
-- Helmet, CORS allowlist, límite de tamaño JSON y rate limit básico.
-- Consultas parametrizadas.
-- Auditoría de inicialización y login.
+- Contraseñas con bcrypt (12 rondas); política: 12–72 bytes, sin contraseñas comunes ni triviales.
+- Sesiones persistentes: el JWT lleva un `sid` que se valida contra la tabla `sessions` en cada petición; cerrar sesión, cambiar contraseña, suspender o eliminar revoca de verdad. Máximo `MAX_ACTIVE_SESSIONS` por usuario.
+- Bloqueo de cuenta tras `LOGIN_MAX_FAILURES` fallos durante `LOGIN_LOCK_MINUTES`; la respuesta es idéntica a una contraseña incorrecta (sin enumeración).
+- Validación estricta con Zod (campos desconocidos rechazados: sin mass-assignment), rate limit en registro/login/operaciones sensibles, límite de cuerpo JSON.
+- Operaciones sensibles (cambiar correo/contraseña, desactivar, eliminar) piden reconfirmar la contraseña.
+- Helmet, CORS allowlist (GET, POST, PATCH, DELETE), consultas parametrizadas, auditoría de acciones de cuenta y administrativas (incluidos los intentos denegados).
 - La ruta de setup queda cerrada después de crear el primer owner.
-- No hay todavía refresh tokens, revocación inmediata de JWT, recuperación de contraseña, MFA, gestión completa de usuarios, cola de eventos, métricas avanzadas ni panel web.
+- `POST /auth/register` responde 409 si el correo existe (permite saber si un correo está registrado; mitigado por rate limit). Si no se quiere, desactivar el registro público.
+- No hay todavía refresh tokens rotatorios (Fase 3), recuperación de contraseña, verificación de correo, MFA, cola de eventos, métricas ni panel web. El token de acceso dura `JWT_EXPIRES_IN` (12 h por defecto).
 - El rate limit es en memoria y por proceso; para varias instancias debe migrarse a un almacén compartido.
 - La auditoría no es criptográficamente inmutable: los permisos de base de datos y backups deben protegerla.
 - El primer owner debe crearse con acceso local o canal seguro. No expongas la clave de setup a Internet.
