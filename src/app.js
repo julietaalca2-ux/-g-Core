@@ -14,17 +14,50 @@ export function createApp({ db, config, corsOrigins }) {
   const app = express();
   if (config.TRUST_PROXY === 'true') app.set('trust proxy', 1);
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: null
+      }
+    },
+    hsts: config.NODE_ENV === 'production'
+  }));
   app.use(cors({ origin(origin, cb) {
     if (!origin || corsOrigins.includes(origin)) return cb(null,true);
     return cb(new Error('Origen no permitido por CORS'));
   }, methods:['GET','POST','PATCH','DELETE'], allowedHeaders:['Content-Type','Authorization'] }));
   app.use(express.json({ limit:'32kb', strict:true }));
   app.use(rateLimit({ windowMs:config.RATE_LIMIT_WINDOW_MS, limit:config.RATE_LIMIT_MAX, standardHeaders:'draft-7', legacyHeaders:false }));
-  app.get('/health', (_req,res) => res.json({ status:'ok', service:'og-core', version, timestamp:new Date().toISOString() }));
+  app.get('/health', (_req,res) => res.json({
+    status: 'ok',
+    service: 'og-core',
+    version,
+    driver: db?.driver || config?.DATABASE_DRIVER || 'sqlite',
+    timestamp: new Date().toISOString()
+  }));
   const publicDir = join(dirname(fileURLToPath(import.meta.url)), '../public');
-  app.use(express.static(publicDir, { index: 'index.html', maxAge: config.NODE_ENV === 'production' ? '1h' : 0 }));
-  app.get(['/admin', '/social'], (_req,res) => res.sendFile(join(publicDir, 'index.html')));
+  const sendIndex = (_req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.sendFile(join(publicDir, 'index.html'));
+  };
+  app.get(['/', '/index.html', '/admin', '/social', '/dashboard', '/login', '/register', '/setup'], sendIndex);
+  app.use(express.static(publicDir, {
+    index: false,
+    maxAge: config.NODE_ENV === 'production' ? '1h' : 0,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+  }));
   app.use('/api/v1/auth', authRoutes(db,config));
   app.use('/api/v1/admin', adminRoutes(db));
   app.use((_req,res) => res.status(404).json({ error:{code:'NOT_FOUND',message:'Ruta no encontrada'} }));
