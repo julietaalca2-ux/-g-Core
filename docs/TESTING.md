@@ -29,6 +29,8 @@ setup (validación, clave incorrecta, creación, 409, índice único de propieta
 - `/health` y versión; `/me` sin token → 401; helmet y ausencia de `x-powered-by`.
 - CORS (con `node:http` para poder fijar `Origin`): origen permitido → `Access-Control-Allow-Origin`; origen bloqueado → 403 `CORS_BLOCKED` sin cabecera de permiso; coincidencia exacta (puerto, esquema, mayúsculas, subdominio engañoso, `null`); sin `Origin` → se atiende sin cabecera; preflight `OPTIONS` permitido → 204 con `GET,POST,PATCH,DELETE` y `Content-Type,Authorization`; `PUT`/`TRACE` no se anuncian; preflight bloqueado → 403; un POST de origen bloqueado no llega al handler; método no permitido en petición real → 404 (CORS lo aplica el navegador, no el servidor).
 
+**Registro + CORS por dominio:** `test/cors-register.test.js` (SQLite en memoria, app real): normalización de `CORS_ORIGINS`; registro desde `https://g-core.onrender.com` (mismo origen) y desde `https://julietaalca2-ux.github.io` (preflight + POST + login + `/me`); orígenes ajenos/engañosos → 403 sin crear cuenta; CSP; frontend con API relativa.
+
 **Configuración:** `test/config.test.js` (valores por defecto, secretos cortos o de ejemplo, PostgreSQL sin URL, entorno hermético).
 
 **Estructura:** `test/structure.test.js` verifica que existan los archivos requeridos (incluido `scripts/check.js`) y que `package.json` apunte a ellos.
