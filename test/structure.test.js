@@ -8,6 +8,7 @@ const REQUIRED = [
   'package.json', '.env.example', '.gitignore', 'README.md', 'ESTADO_DEL_PROYECTO.md',
   'docs/ROADMAP.md', 'docs/ARCHITECTURE.md', 'docs/OPERATIONS.md', 'docs/TESTING.md',
   'scripts/check.js', 'scripts/test.js', 'scripts/doctor.js',
+  'public/index.html', 'public/app.css', 'public/app.js',
   'src/app.js', 'src/server.js', 'src/config.js',
   'src/db/index.js', 'src/db/sqlite.js', 'src/db/postgres.js', 'src/db/schema.sql', 'src/db/schema.postgres.sql',
   'src/middleware/auth.js', 'src/routes/auth.js', 'src/routes/admin.js',
