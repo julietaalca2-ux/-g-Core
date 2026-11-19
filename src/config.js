@@ -5,7 +5,10 @@ const PLACEHOLDER = /^REEMPLAZAR/i;
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   HOST: z.string().default('127.0.0.1'),
-  PORT: z.coerce.number().int().min(1).max(65535).default(8787),
+  PORT: z.preprocess(
+  value => typeof value === 'string' && value.trim() === '' ? undefined : value,
+  z.coerce.number().int().min(1).max(65535).default(8787)
+),
   TRUST_PROXY: z.enum(['true', 'false']).default('false'),
   DATABASE_DRIVER: z.enum(['sqlite', 'postgres']).default('sqlite'),
   SQLITE_PATH: z.string().default('./data/og-core.sqlite'),
