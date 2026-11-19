@@ -5,8 +5,8 @@
   "description": "Núcleo modular de servicios y panel web para la plataforma ÖG",
   "type": "module",
   "engines": {
-  "node": "22.x"
-},
+    "node": ">=20.11.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
