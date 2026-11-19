@@ -9,7 +9,7 @@ npm run test:report    # cada archivo por separado, errores completos; PostgreSQ
 node scripts/test.js sqlite   # solo los archivos cuyo nombre contenga "sqlite"
 npm run audit:deps
 ```
-Las pruebas no necesitan `.env` y no lo leen: `test-support/env.js` sobrescribe todas las variables de entorno relevantes (entorno hermético).
+Las pruebas no necesitan `.env` y no lo leen: `test/support/env.js` sobrescribe todas las variables de entorno relevantes (entorno hermético).
 
 Si un archivo falla sin detalle: `node test/sqlite.test.js` (ejecución directa) y `npm run doctor`.
 
@@ -22,7 +22,7 @@ Cada ejecución usa un schema `ogtest_<hex>` creado y eliminado por la propia pr
 
 ## Cobertura actual
 
-**Suite compartida SQLite/PostgreSQL** (`test-support/api-suite.js`, misma lógica contra ambos motores):
+**Suite compartida SQLite/PostgreSQL** (`test/support/api-suite.js`, misma lógica contra ambos motores):
 setup (validación, clave incorrecta, creación, 409, índice único de propietario); login (correcto, incorrecto, inexistente con respuesta idéntica); /me (token válido, ausente, manipulado, otra clave, `alg: none`); administración (401/403/200, límite acotado, eventos de auditoría, usuario suspendido); robustez (JSON inválido → 400, cuerpo grande → 413, ruta inexistente → 404); rate limit de autenticación.
 
 **Pruebas sin base de datos real** (`test/app.test.js`, base simulada):
